@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class Deck : MonoBehaviour
@@ -109,7 +111,139 @@ public class Deck : MonoBehaviour
          * - Probabilidad de que el jugador obtenga entre un 17 y un 21 si pide una carta
          * - Probabilidad de que el jugador obtenga más de 21 si pide una carta          
          */
+        CardHand playerHand = player.GetComponent<CardHand>();
+        CardHand dealerHand = dealer.GetComponent<CardHand>();
+
+        List<CardModel> cardsJugador = playerHand.cards
+            .Select(card => card.GetComponent<CardModel>()).ToList();
+        List<CardModel> dealerCards = dealerHand.cards
+            .Select(card => card.GetComponent<CardModel>()).ToList();
+
+        // Teniendo la carta oculta, probabilidad de que el dealer tenga más puntuación que el jugador
+
+
+        //Probabilidad de que el jugador obtenga entre un 17 y un 21 si pide una carta
+        // casos favorables = todas las sumas que esten entre 17 y 21 
+        // casos posibles = cartas restantes
+        int puntosJugador = playerHand.points;
+        float contSumasEntre17_21 = 0.0f;// casos favorables
+        float casosPosibles = values.Length - cardIndex + 1.0f;// casos posibles, cartas restantes mas 1 por cada As
+        int suma = 0;
+
+        // contar cuantos As hay, tiene 2 sumas posibles
+        for (int i = cardIndex; i < values.Length; i++)
+        {
+            if (values[i] == 1)
+            {
+                casosPosibles += 1.0f;
+            }
+        }
+        // contar casos favorables
+        for (int i = cardIndex; i < values.Length; i++)
+        {
+            suma = puntosJugador + values[i];
+            if (suma >= 17 && suma <= 21)
+            {
+
+                contSumasEntre17_21++;
+            }
+
+            // si el valor 1 contemplar el 11
+            if (values[i] == 1)
+            {
+                suma = puntosJugador + 11;
+                if (suma >= 17 && suma <= 21)
+                {
+                    contSumasEntre17_21++;
+                }
+            }
+        }
+
+
+        double prob = (contSumasEntre17_21 / casosPosibles) * 100;
+        string prob17_21 = "Probabilidad de que el jugador obtenga entre un 17 y un 21 si pide una carta: " + prob;
+        probMessage.text = prob17_21;
+
+
+        //Probabilidad de que el jugador obtenga más de 21 si pide una carta
+        int casosFavMas21 = 0;
+        // casos favorables todas aquellas sumas que sobre pasen el 21
+        for (int i = cardIndex; i < values.Length; i++)
+        {
+            suma = puntosJugador + values[i];
+            if (suma > 21)
+            {
+
+                casosFavMas21++;
+            }
+
+            // si el valor 1 contemplar el 11
+            if (values[i] == 1)
+            {
+                suma = puntosJugador + 11;
+                if (suma > 21)
+                {
+                    casosFavMas21++;
+                }
+            }
+        }
+
+        double prob2 = (casosFavMas21 / casosPosibles) * 100;
+        string probMas21 = "\nProbabilidad de que el jugador obtenga mas de 21 si pide carta: " + prob2;
+        probMessage.text += probMas21;
+
+
+        //Teniendo la carta oculta, probabilidad de que el dealer tenga más puntuación que el jugador
+        if (dealerCards.Count > 1) // contar a partir de las dos cartas repartidas iniciales
+        {
+
+            int casosFavDealerMasPuntuacion = 0;
+            int puntosDestapadosDealer = dealerCards[1].value;
+
+
+
+            // casos favorables todas aquellas sumas que sobre pasen el 21
+            for (int i = cardIndex; i < values.Length; i++)
+            {
+                suma = puntosDestapadosDealer + values[i];
+
+                if (suma > puntosJugador && suma < 21)
+                {
+
+                    casosFavDealerMasPuntuacion++;
+                }
+
+                // si el valor de la nueva es 1 contemplar el 11
+                if (values[i] == 1)
+                {
+                    suma = puntosDestapadosDealer + 11;
+                    if (suma > puntosJugador && suma < 21)
+                    {
+                        casosFavDealerMasPuntuacion++;
+                    }
+                }
+
+                // si la carta es 1
+                if (puntosDestapadosDealer == 1)
+                {
+                    suma = 11 + values[i];
+
+                    if (suma > puntosJugador && suma < 21)
+                    {
+
+                        casosFavDealerMasPuntuacion++;
+                    }
+
+                }
+            }
+
+            double prob3 = (casosFavDealerMasPuntuacion / casosPosibles) * 100;
+            probMessage.text += "\nTeniendo la carta oculta, probabilidad de que el dealer tenga más puntuación que el jugador: " + prob3;
+        }
+
+
     }
+
 
     void PushDealer()
     {
