@@ -446,7 +446,7 @@ public class Deck : MonoBehaviour
 
         yield return new WaitForSeconds(3);
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-
+        /* */
     }
 
     // Apostar--------------------------
