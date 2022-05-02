@@ -53,6 +53,7 @@ public class Deck : MonoBehaviour
 
     }
 
+
     private void ShuffleCards()
     {
         /*TODO:
@@ -60,6 +61,32 @@ public class Deck : MonoBehaviour
          * El método Random.Range(0,n), devuelve un valor entre 0 y n-1
          * Si lo necesitas, puedes definir nuevos arrays.
          */
+
+        // crear un array de indices, randomizarlo 
+        int[] indices = Enumerable.Range(0, values.Length).ToArray();
+        System.Random rnd = new System.Random();
+        indices = indices.OrderBy(x => rnd.Next()).ToArray();
+
+
+        // poner los dos arrays en el orden de los indices
+        int[] tempValues = new int[52];
+        Sprite[] tempFaces = new Sprite[52];
+        // arr[i] should be present at index[i] index
+        for (int i = 0; i < 52; i++)
+        {
+            tempValues[indices[i]] = values[i];
+            tempFaces[indices[i]] = faces[i];
+        }
+        // Copy temp[] to arr[]
+        for (int i = 0; i < 52; i++)
+        {
+            values[i] = tempValues[i];
+            faces[i] = tempFaces[i];
+            indices[i] = i;
+        }
+
+
+
     }
 
     void StartGame()
