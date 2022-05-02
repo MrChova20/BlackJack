@@ -426,7 +426,38 @@ public class Deck : MonoBehaviour
          * Mostramos el mensaje del que ha ganado
          */
 
+
+        while (dealer.GetComponent<CardHand>().points < 17)
+        {
+            PushDealer();
+
+        }
+
+        // si tienes mas puntos que el ganas
+        if (dealer.GetComponent<CardHand>().points < player.GetComponent<CardHand>().points)
+        {
+            endRonda(TipoFinPartida.Victoria);
+        }
+        else if (dealer.GetComponent<CardHand>().points == player.GetComponent<CardHand>().points)
+        {
+            // empate
+            endRonda(TipoFinPartida.Empate);
+        }
+        else
+        {
+            // si obtienes menos pierdes, pero si se pasa de 21 ganas
+            if (dealer.GetComponent<CardHand>().points < 21)
+            {
+                endRonda(TipoFinPartida.Derrota);
+            }
+            else
+            {
+                endRonda(TipoFinPartida.Victoria);
+            }
+        }
+
     }
+
 
 
     public void PlayAgain()
@@ -446,7 +477,7 @@ public class Deck : MonoBehaviour
 
         yield return new WaitForSeconds(3);
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        /* */
+
     }
 
     // Apostar--------------------------
@@ -488,7 +519,7 @@ public class Deck : MonoBehaviour
         hitButton.interactable = true;
         stickButton.interactable = true;
 
-
+        /* */
     }
 
     public void onInputApuestaChange()
