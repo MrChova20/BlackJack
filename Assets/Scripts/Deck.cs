@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class Deck : MonoBehaviour
@@ -14,8 +17,19 @@ public class Deck : MonoBehaviour
     public Text finalMessage;
     public Text probMessage;
 
+
+
     public int[] values = new int[52];
     int cardIndex = 0;
+
+
+    // apuesta
+    public Text apuestaActual;
+    public Text saldoActual;
+    public InputField inpApuesta;
+    public Button btnApostar;
+    private double apuesta;
+    private double saldo;
 
     private void Awake()
     {
@@ -55,7 +69,6 @@ public class Deck : MonoBehaviour
 
     }
 
-
     private void ShuffleCards()
     {
         /*TODO:
@@ -93,14 +106,81 @@ public class Deck : MonoBehaviour
 
     void StartGame()
     {
+
+        playAgainButton.interactable = false;
+        hitButton.interactable = false;
+        stickButton.interactable = false;
+        btnApostar.interactable = false;
+        inpApuesta.interactable = true;
+
         for (int i = 0; i < 2; i++)
         {
-            PushPlayer();
             PushDealer();
+            PushPlayer();
+            voltearCartaDealer(false);
             /*TODO:
              * Si alguno de los dos obtiene Blackjack, termina el juego y mostramos mensaje
              */
+            if (comprobarBlackJackJugador())
+            {
+                endRonda(TipoFinPartida.Victoria);
+
+            }
         }
+    }
+
+    private void voltearCartaDealer(bool v)
+    {
+        dealer.GetComponent<CardHand>().cards[0].GetComponent<CardModel>().ToggleFace(v);
+    }
+
+    private bool comprobarBlackJackJugador()
+    {
+
+        if (player.GetComponent<CardHand>().points == 21)
+        {
+            return true;
+        }
+        else
+        {
+            // si hay un 1 comprobar si con el 11 hace 21
+            foreach (GameObject carta in player.GetComponent<CardHand>().cards)
+            {
+                if (carta.GetComponent<CardModel>().value == 1)
+                {
+                    if (((player.GetComponent<CardHand>().points - 1) + 11) == 21)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private bool comprobarBlackJackDealer()
+    {
+        if (dealer.GetComponent<CardHand>().points == 21)
+        {
+            return true;
+        }
+        else
+        {
+            // si hay un 1 comprobar si con el 11 hace 21
+            foreach (GameObject carta in dealer.GetComponent<CardHand>().cards)
+            {
+                if (carta.GetComponent<CardModel>().value == 1)
+                {
+                    if (((dealer.GetComponent<CardHand>().points - 1) + 11) == 21)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private void CalculateProbabilities()
@@ -244,7 +324,6 @@ public class Deck : MonoBehaviour
 
     }
 
-
     void PushDealer()
     {
         /*TODO:
@@ -259,7 +338,7 @@ public class Deck : MonoBehaviour
         /*TODO:
          * Dependiendo de cómo se implemente ShuffleCards, es posible que haya que cambiar el índice.
          */
-        player.GetComponent<CardHand>().Push(faces[cardIndex], values[cardIndex] /*,cardCopy*/);
+        player.GetComponent<CardHand>().Push(faces[cardIndex], values[cardIndex]/*,cardCopy*/);
         cardIndex++;
         CalculateProbabilities();
     }
@@ -270,12 +349,68 @@ public class Deck : MonoBehaviour
          * Si estamos en la mano inicial, debemos voltear la primera carta del dealer.
          */
 
+
         //Repartimos carta al jugador
         PushPlayer();
 
         /*TODO:
          * Comprobamos si el jugador ya ha perdido y mostramos mensaje
          */
+        if (player.GetComponent<CardHand>().points > 21)
+        {
+            endRonda(TipoFinPartida.Derrota);
+
+        }
+
+        if (comprobarBlackJackJugador())
+        {
+            endRonda(TipoFinPartida.Victoria);
+        }
+
+    }
+
+    private void endRonda(TipoFinPartida tipo)
+    {
+        string strFinal = "";
+        switch (tipo)
+        {
+            case TipoFinPartida.Victoria:
+                strFinal = "Has ganado";
+                break;
+            case TipoFinPartida.Derrota:
+                strFinal = "Has perdido";
+                break;
+            case TipoFinPartida.Empate:
+                strFinal = "Empate";
+                break;
+        }
+
+        voltearCartaDealer(true);
+        finApuesta(tipo);
+
+
+        hitButton.interactable = false;
+        inpApuesta.interactable = false;
+        stickButton.interactable = false;
+        btnApostar.interactable = false;
+
+        // comprobar si ya no tienes saldo
+        if (saldo <= 0)
+        {
+            playAgainButton.interactable = false;
+            strFinal += ".\nNo tienes saldo, la partida se va a reiniciar.";
+            // sin saldo reiniciar partida
+            StartCoroutine(restartGame());
+        }
+        else
+        {
+            playAgainButton.interactable = true;
+
+        }
+
+
+
+        finalMessage.text = strFinal;
 
     }
 
@@ -293,10 +428,10 @@ public class Deck : MonoBehaviour
 
     }
 
+
     public void PlayAgain()
     {
-        hitButton.interactable = true;
-        stickButton.interactable = true;
+
         finalMessage.text = "";
         player.GetComponent<CardHand>().Clear();
         dealer.GetComponent<CardHand>().Clear();
@@ -305,4 +440,68 @@ public class Deck : MonoBehaviour
         StartGame();
     }
 
+
+    IEnumerator restartGame()
+    {
+
+        yield return new WaitForSeconds(3);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+
+    }
+
+    // Apostar--------------------------
+
+    private void finApuesta(TipoFinPartida tipo)
+    {
+
+
+
+        switch (tipo)
+        {
+            case TipoFinPartida.Victoria:
+                saldo += apuesta;
+                break;
+            case TipoFinPartida.Derrota:
+                saldo -= apuesta;
+                break;
+        }
+
+
+        saldoActual.text = saldo.ToString();
+        apuestaActual.text = "0";
+        inpApuesta.interactable = true;
+        btnApostar.interactable = true;
+    }
+
+    public void IniciarApuesta()
+    {
+        apuesta = double.Parse(inpApuesta.text.ToString());
+        saldo = double.Parse(saldoActual.text.ToString());
+
+        saldoActual.text = (saldo - apuesta).ToString();
+        apuestaActual.text = apuesta.ToString();
+
+        inpApuesta.interactable = false;
+        inpApuesta.text = "";
+        btnApostar.interactable = false;
+
+        hitButton.interactable = true;
+        stickButton.interactable = true;
+
+
+    }
+
+    public void onInputApuestaChange()
+    {
+        // la apuesta no debe superar el saldo y no debe estar vacia
+        btnApostar.interactable =
+            !inpApuesta.text.ToString().Equals("")
+             && double.Parse(inpApuesta.text.ToString()) <= double.Parse(saldoActual.text.ToString());
+
+    }
+}
+
+public enum TipoFinPartida
+{
+    Victoria, Derrota, Empate
 }
