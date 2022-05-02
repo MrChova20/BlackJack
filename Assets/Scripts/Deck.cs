@@ -17,8 +17,8 @@ public class Deck : MonoBehaviour
     public Text finalMessage;
     public Text probMessage;
 
-
-
+    /*prueba*/
+   
     public int[] values = new int[52];
     int cardIndex = 0;
 
